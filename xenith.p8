@@ -3,7 +3,7 @@ version 41
 __lua__
 -- xenith
 --by godmil
---v1.1 - based on beta13
+--v1.5 - based on beta15
 
 -----------------------
 -- GENERAL FUNCTIONS --
@@ -35,8 +35,11 @@ function player2joins()
 	end
 end
 
-function existsintable(...)
-	return count(...) > 0
+function existsintable(table1,value)
+	for entry in all(table1) do
+		if (entry == value) return true
+	end
+	return false
 end
 
 function exit()
@@ -360,8 +363,6 @@ function createbgnd(size, speed)
 				end
 				add(asteroids, {x = flr(rnd(128))+128, y = flr(rnd(128))-128, size = 4, spr = 76, sp = speed/8}) --large asteroid
 			end
-
-			
 		end,
 
 		move = function(_ENV)
@@ -471,16 +472,11 @@ function createbgnd(size, speed)
 				end
 
 				local darkcolour = 0
+				local shadowlines = split"0,1,2,3,4,5,6,7,8,10,11,12,14,16,18,22,105,109,111,113,115,116,117,119,120,121,122,123,124,125,126,127"
 				if(leveltype == "cave") darkcolour = 1
-				filltable=split"0b0000000000000000.1,0b1000100010001000.1,0b1010101010101010.1,0b1011101110111011.1"
-				for i = 1, #filltable do
-					xcoord = i-1+5*(i-1)
-					fillp(filltable[i])
-					rectfill(xcoord, 0,xcoord + 5, 127, darkcolour)
-					rectfill(127-xcoord, 0, 122-xcoord, 127, darkcolour)
+				for i = 1,#shadowlines do
+					line(shadowlines[i],0,shadowlines[i],127,darkcolour)
 				end
-				fillp()
-				pal()
 			elseif leveltype == "city" then 
 				for i in all(bgndtable) do
 					spr(abs(i.y)/32+51, i.x, i.y)
@@ -528,6 +524,7 @@ function createbgnd(size, speed)
 	}
 	return setmetatable(bgndobj, {__index = _ENV})
 end
+
 
 ----------------
 --MAIN OBJECTS--
@@ -715,10 +712,7 @@ function enemyclass(enemytable)
 			end
 
 			if inplace then
-				if(y > 140) dead = true
-				if(y < -10) dead = true
-				if(x > 140) dead = true
-				if(x < -10) dead = true
+				if(y > 140) or (y < -10) or (x > 140) or (x < -10) then dead = true end
 			end
 			
 			if(not pause) entime += 1/60
@@ -893,18 +887,18 @@ function makebullet(x1,y1,ang, speed, purple)
 		 	return x >129 or y >129 or x < -4 or y < -4
 		end,
 		
-		draw = function(self)
+		draw = function(_ENV)
 			if leveltype == "sand" or leveltype =="lava" or purple then 
 				pal(10,14)
 				pal(9,2)
-				spr(4, self.x-2, self.y-2, 0.5,0.5)
+				spr(4, x-2, y-2, 0.5,0.5)
 				pal()
 			else
-		 		spr(4, self.x-2, self.y-2, 0.5,0.5)
+		 		spr(4, x-2, y-2, 0.5,0.5)
 		 	end
 		end,
 	}
-	return bullet
+	return setmetatable(bullet, {__index = _ENV})
 end
 
 function createlargesprite(x0,y0,type)
@@ -1725,7 +1719,7 @@ function draw_game()
 				centretext("survive until your", 70, 10, true)
 				centretext("boost is charged", 78, 10, true)
 		end 
-		if(level == 2) centretext("hold a button to slow down", 70, 10, true)
+		if(level == 2) centretext("hold button to slow down", 70, 10, true)
 		if(level == 3) centretext("goodluck!", 70, 10, true)
 		if not existsintable(split"1,2,3,51", level) then 
 			if(hitsperlevel[level] == 10) centretext("you can do it!", 70, 10, true)
@@ -1761,11 +1755,7 @@ function draw_deathscreen()
 	print("restarts:", 5, 96, 5)
 	print(totalrestartcounter, 5, 106, 9)
 	print("this level:", 85, 96, 5)
-	local counteroffset = 124
-	if(hitsperlevel[level] >= 10) counteroffset = 120
-	if(hitsperlevel[level] >= 100) counteroffset = 116
-	print(hitsperlevel[level], counteroffset, 106, 9)
-
+	print(hitsperlevel[level], 128-print(hitsperlevel[level],0,256), 106, 9)
 	mutebutton(0)
 	exit()
 end
@@ -1960,7 +1950,7 @@ function _init()
 	if(dget(13) == 1) old2pinvunrecorded = true old2pinvunhighscore = dget(3) 
 
 	levelbgndtable=split"0,0,1,13,12,3,3,12,12,3,9,9,9,12,12,3,3,3,3,12,12,13,13,1,0,0,0,6,13,5,0,0,0,0,0,4,4,4,13,13,1,1,9,9,9,1,13,4,0,0,0,"
-	levelbgndtrantable=split"-1,1,13,12,3,-1,12,-1,3,9,-1,-1,12,-1,3,-1,-1,-1,12,-1,13,-1,1,0,-1,-1,6,13,5,0,-1,-1,-1,-1,4,-1,-1,1,-1,0,-1,9,-1,-1,1,13,4,0,-1,-1,"
+	levelbgndtrantable=split"-1,1,13,12,3,-1,12,-1,3,9,-1,-1,12,-1,3,-1,-1,-1,12,-1,13,-1,1,0,-1,-1,6,13,5,0,-1,-1,-1,-1,4,-1,-1,1,-1,0,-1,9,-1,-1,1,-1,4,0,-1,-1,"
 
 	levelenemytable = {
 		{--1
@@ -2346,7 +2336,7 @@ __gfx__
 551156000000000000000000000000000000228888888888888220000000000000000000000000000000000000000766d00000000766d0000000766d000766d0
 555560000000000000000000000000000000000022222222200000000000000000000000000000000000000000000766d00000000766d0000000766d000766d0
 556600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000766d00000000766d0000000766d000766d0
-6600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006ddd000000006ddd00000006ddd0007ddd0
+6600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006ddd000000006ddd00000006ddd0006ddd0
 __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
